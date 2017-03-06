@@ -1,48 +1,56 @@
-# mysql-backup
+# MySQL to Google Big Query
 
-Container that backs up MySQL databases to S3. The container overwrites the same S3 object every time it is run, it is recommended you turn
-versioning on to retain access to previous copies.
+Backs up MySQL databases to Google Big Query.
 
-There is an existing image available on the public registry at [iainmckay/mysql-backup](https://registry.hub.docker.com/u/iainmckay/mysql-backup/).
+```sh
+GCLOUD_SERVICE_KEY=`base64 <your-service-account.json>`
+docker run \
+  -e MYSQL_HOST=127.0.0.1 \
+  -e MYSQL_USER=root \
+  -e MYSQL_PASSWORD=password \
+  -e BQ_PROJECT_ID=1092187650 \
+  -e BQ_DATASET_ID=mydataset \
+  -e GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY \
+  -e EXCLUDE_DB=foo|bar \
+  abemeda/mysql-backup
+```
 
-## Backing up
+### BQ_PROJECT_ID
+The Google Cloud project ID.
 
-To backup run:
+### BQ_DATASET_ID (optional)
+The Big Query dataset ID to import the tables in. If left blank it will use the source table name.
 
-    $ docker run -e AWS_ACCESS_KEY_ID=key -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=eu-west-1 -e MYSQL_HOST=127.0.0.1 -e MYSQL_USER=root -e MYSQL_PASSWORD=password iainmckay/mysql-backup backup
+### GCLOUD_SERVICE_KEY
+Base64 encoded Google Cloud service account json file. Generate as follows.
 
-You can provide an extra argument with a specific database to backup.
+To generate it visit https://console.developers.google.com/, and click on ‘API Manager’, then ‘Credentials’, then ‘New credentials’, then select ‘Service account key’.
+Create and download the service account json file, then run the following command to get a base64 encoded version of it.
 
-## Restoring
+```sh
+GCLOUD_SERVICE_KEY=`base64 <your-service-account.json>`
+```
 
-To restore an existing backup run:
+### MYSQL_HOST
+MySQL host.
 
-    $ docker run -e AWS_ACCESS_KEY_ID="key" -e AWS_SECRET_ACCESS_KEY="secret" -e AWS_DEFAULT_REGION="eu-west-1" -e MYSQL_HOST=127.0.0.1 -e MYSQL_USER=root -e MYSQL_PASSWORD=password iainmckay/mysql-backup restore
+### MYSQL_PORT (optional)
+Port the MySQL server is accessible on. Defaults to `3306`.
 
-It is important to note that if this database already exists on your server, this process will drop it first. You can also provide an extra argument with a specific database to restore.
+### MYSQL_USER (optional)
+MySQL user. Defaults to `root`.
 
-## Excluding Databases
+### MYSQL_PASSWORD
+Password to use when connecting.
 
-You can exclude databases from backup/restore by using --exclude.
+### MYSQL_DB (optional)
+MySQL DB to export. Exports all if left blank.
 
-For example:
+### MYSQL_TABLE (optional)
+MySQL table to export. Exports all if left blank.
 
-	$ docker run -e AWS_ACCESS_KEY_ID="key" -e AWS_SECRET_ACCESS_KEY="secret" -e AWS_DEFAULT_REGION="eu-west-1" -e MYSQL_HOST=127.0.0.1 -e MYSQL_USER=root -e MYSQL_PASSWORD=password iainmckay/mysql-backup --exclude=some_database,another_database restore
+### EXCLUDE_DB (optional)
+Pipe separated list of databases to exclude.
 
-## Configuration 
-
-The container can be customized with these environment variables:
-
-Name | Default Value | Description
---- | --- | ---
-AWS_ACCESS_KEY_ID | `blank` | Your AWS access key with access to the desired bucket
-AWS_SECRET_ACCESS_KEY | `blank` | Your AWS secret access key with access to the desired bucket
-AWS_DEFAULT_REGION | `blank` | The AWS region your bucket is in
-MYSQL_HOST | 127.0.0.1 | Address the MySQL server is accessible at
-MYSQL_PORT | 3306 | Port the MySQL server is accessible on
-MYSQL_USER | root | User to connect as
-MYSQL_PASSWORD | `blank` | Password to use when connecting
-RESTORE_DB_CHARSET | utf8 | Which charset to recreate the database with
-RESTORE_DB_COLLATION | utf8_bin | Which collation to recreate the database with
-S3_BUCKET | `blank` | The bucket to write the backup to
-S3_PATH | mysql | The path to write the backups to
+### EXCLUDE_TABLE (optional)
+Pipe separated list of tables to exclude.
