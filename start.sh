@@ -3,10 +3,15 @@
 set -e
 
 echo $GCLOUD_SERVICE_KEY | base64 --decode --ignore-garbage > $HOME/gcloud-service-key.json
-gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+gcloud auth activate-service-account --key-file $HOME/gcloud-service-key.json
 gcloud config set project $BQ_PROJECT_ID
 
 MYSQL_PARAMS="--user=$MYSQL_USER --password=$MYSQL_PASSWORD --host=$MYSQL_HOST --port=$MYSQL_PORT"
+
+BQ_PARAMS="--quote= --field_delimiter=\t --source_format=CSV"
+if [ -n "$REPLACE_DATA" ]; then
+    BQ_PARAMS="$BQ_PARAMS --replace"
+fi
 
 if [ -n "$MYSQL_DB" ]; then
     databases=$MYSQL_DB
@@ -19,8 +24,6 @@ if [ -n "$EXCLUDE_DB" ]; then
 fi
 
 for db in $databases; do
-    echo "dumping database: $db"
-
     if [ -n "$MYSQL_TABLE" ]; then
         tables=$MYSQL_TABLE
     else
@@ -32,11 +35,14 @@ for db in $databases; do
     fi
 
     for table in $tables; do
-        echo "dumping table: $table"
-        mysql $MYSQL_PARAMS --database=$db -e "SELECT * FROM \`$table\`" --batch --silent > /tmp/$db.$table.csv
-        bq load --quote='' --field_delimiter="\t" --source_format=CSV ${BQ_DATASET_ID:-$db}.$table /tmp/$db.$table.csv
+        rowcount=$(mysql $MYSQL_PARAMS --skip-column-names -e "SELECT COUNT(1) FROM \`$table\`" $db)
+        echo "dumping $db.$table ($rowcount records)"
+        for ((i=0;i<=$rowcount;i+=$BATCH_SIZE)); do
+            mysql $MYSQL_PARAMS --batch --silent -e "SELECT * FROM \`$table\` LIMIT $i, $BATCH_SIZE" $db >> /tmp/$db.$table.csv
+        done
+        bq load $BQ_PARAMS ${BQ_DATASET_ID:-$db}.$table /tmp/$db.$table.csv
         rm -rf /tmp/$db.$table.csv
     done
 done
 
-echo "completed dump"
+echo "completed export"

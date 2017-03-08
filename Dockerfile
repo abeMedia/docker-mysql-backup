@@ -4,7 +4,8 @@ MAINTAINER Adam Bouqdib <adam@abemedia.co.uk>
 ENV DEBIAN_FRONTEND=noninteractive \
     MYSQL_HOST=127.0.0.1 \
     MYSQL_PORT=3306 \
-    MYSQL_USER=root
+    MYSQL_USER=root \
+    BATCH_SIZE=1000000
 
 RUN set -ex \
     && apt-get update && apt-get install -yq --no-install-recommends \
@@ -19,7 +20,7 @@ RUN set -ex \
       google-cloud-sdk \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* 
+    && rm -rf /tmp/*
 
 ADD start.sh /start.sh
 
