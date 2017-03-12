@@ -31,6 +31,9 @@ Create and download the service account json file, then run the following comman
 GCLOUD_SERVICE_KEY=`base64 <your-service-account.json>`
 ```
 
+### REPLACE_DATA (optional)
+Empty Big Query table before importing new data.
+
 ### BATCH_SIZE (optional)
 How many rows to export per batch. Defaults to 1 million.
 

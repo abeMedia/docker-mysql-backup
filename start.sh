@@ -8,7 +8,7 @@ gcloud config set project $BQ_PROJECT_ID
 
 MYSQL_PARAMS="--user=$MYSQL_USER --password=$MYSQL_PASSWORD --host=$MYSQL_HOST --port=$MYSQL_PORT"
 
-BQ_PARAMS="--quote= --field_delimiter=\t --source_format=CSV"
+BQ_PARAMS="--quote= --field_delimiter=\t --source_format=CSV --null_marker=NULL"
 if [ -n "$REPLACE_DATA" ]; then
     BQ_PARAMS="$BQ_PARAMS --replace"
 fi
