@@ -36,13 +36,14 @@ for db in $databases; do
 
     for table in $tables; do
         rowcount=$(mysql $MYSQL_PARAMS --skip-column-names -e "SELECT COUNT(1) FROM \`$table\`" $db)
-        echo "dumping $db.$table ($rowcount records)"
+        echo "Exporting $db.$table ($rowcount records)..."
         for ((i=0;i<=$rowcount;i+=$BATCH_SIZE)); do
             mysql $MYSQL_PARAMS --batch --silent -e "SELECT * FROM \`$table\` LIMIT $i, $BATCH_SIZE" $db >> /tmp/$db.$table.csv
         done
-        bq load $BQ_PARAMS ${BQ_DATASET_ID:-$db}.$table /tmp/$db.$table.csv
+        echo "Uploading to Big Query ($BQ_PROJECT_ID:${BQ_DATASET_ID:-$db}.$table)"
+        bq load $BQ_PARAMS ${BQ_DATASET_ID:-$db}.$table /tmp/$db.$table.csv > /dev/null
         rm -rf /tmp/$db.$table.csv
     done
 done
 
-echo "completed export"
+echo "Export complete."
